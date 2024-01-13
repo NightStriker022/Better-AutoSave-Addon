@@ -1,0 +1,13 @@
+1) Install the Better AutoSave Addon.
+
+2) Download and SAVE to your desktop.
+
+3) Remove the "_init_" file from the folder "Better AutoSave Addon"
+
+4) Open Blender and go to "Edit" - "Preferences" - "Addons" - "Install"
+
+5) Press the "_init_" file and your done! *No Your Not Actually Done:{*
+
+6) Press "N" on your keyboard and find the "Tools" section on the right hand corner and click "Start AutoSave"
+
+Now Your Done :)
