@@ -1,35 +1,57 @@
+bl_info = {
+    "name": "Better AutoSave Addon",
+    "blender": (4, 0, 2),
+    "category": "System",
+}
+
 import bpy
+import threading
+import subprocess
+import time
+import os
 
-class AutoSaveTimerThread:
-    def __init__(self, interval):
+class AutoSaveTimerThread(threading.Thread):
+    def __init__(self, interval, auto_save_folder):
+        threading.Thread.__init__(self)
+        self.daemon = True
         self.interval = interval
-        self.timer = None
+        self.auto_save_folder = auto_save_folder
+        self.stopped = threading.Event()  # Event to signal the thread to stop
 
-    def start(self):
-        if self.timer is None:
-            self.timer = bpy.app.timers.register(self.save_mainfile, first_interval=self.interval)
-
-    def stop(self):
-        if self.timer is not None:
-            bpy.app.timers.unregister(self.timer)
-            self.timer = None
+    def run(self):
+        while not self.stopped.is_set():
+            time.sleep(self.interval)
+            self.save_mainfile()
 
     def save_mainfile(self):
-        bpy.ops.wm.save_mainfile()
-        return self.interval  # Reschedule the timer
+        timestamp = bpy.context.scene.frame_current
+        file_path = os.path.join(self.auto_save_folder, f"auto_save_{timestamp}.blend")
+        bpy.ops.wm.save_as_mainfile(filepath=file_path, check_existing=False)
+
+    def stop(self):
+        self.stopped.set()
 
 class AutoSavePanel(bpy.types.Panel):
-    bl_label = "AutoSave Panel"
+    bl_label = "Better AutoSave"
     bl_idname = "PT_AutoSavePanel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'Tools'
+    bl_category = 'Better AutoSave'
 
     def draw(self, context):
         layout = self.layout
+
+        # Start AutoSave button
         row = layout.row()
         row.operator("wm.start_auto_save")
         row.prop(context.scene, "auto_save_interval", text="Interval (seconds)")
+
+        # Stop AutoSave button
+        row = layout.row()
+        row.operator("wm.stop_auto_save", text="Stop AutoSave")
+
+        # Check SSD Health button
+        row = layout.row()
         row.operator("wm.check_ssd_health", text="Check SSD Health")
 
 class WM_OT_StartAutoSave(bpy.types.Operator):
@@ -37,7 +59,13 @@ class WM_OT_StartAutoSave(bpy.types.Operator):
     bl_label = "Start AutoSave"
     
     def execute(self, context):
-        bpy.types.Scene.auto_save_thread = AutoSaveTimerThread(context.scene.auto_save_interval)
+        desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+        auto_save_folder = os.path.join(desktop, "AutoSaves")
+        
+        if not os.path.exists(auto_save_folder):
+            os.makedirs(auto_save_folder)
+        
+        bpy.types.Scene.auto_save_thread = AutoSaveTimerThread(context.scene.auto_save_interval, auto_save_folder)
         bpy.types.Scene.auto_save_thread.start()
         return {'FINISHED'}
 
@@ -56,9 +84,40 @@ class WM_OT_CheckSSDHealth(bpy.types.Operator):
     bl_label = "Check SSD Health"
 
     def execute(self, context):
-        # Your SSD health check logic here
-        self.report({'INFO'}, "Simulated SSD Health Check Passed")
+        try:
+            # Run the smartctl command to get SMART data from the SSD
+            result = subprocess.run(["smartctl", "--all", "/dev/sdX"], capture_output=True, text=True)
+            
+            # Check if the command was successful
+            if result.returncode == 0:
+                smart_data = result.stdout
+                
+                # Example: Look for the Wear Leveling Count attribute
+                wear_leveling_count = self.extract_attribute_value(smart_data, "Wear_Leveling_Count")
+                
+                # Example: Check if Wear Leveling Count is below a threshold
+                if wear_leveling_count is not None and wear_leveling_count < 100:
+                    self.report({'WARNING'}, f"SSD Wear Leveling Count is {wear_leveling_count}. Consider replacing the SSD.")
+                else:
+                    self.report({'INFO'}, "SSD Health Check Passed")
+            else:
+                self.report({'ERROR'}, "Failed to retrieve SMART data. Ensure smartctl is installed.")
+        
+        except Exception as e:
+            self.report({'ERROR'}, f"An error occurred: {str(e)}")
+        
         return {'FINISHED'}
+
+    def extract_attribute_value(self, smart_data, attribute_name):
+        # Example: Extract attribute value from SMART data
+        lines = smart_data.split('\n')
+        for line in lines:
+            if attribute_name in line:
+                parts = line.split()
+                if len(parts) >= 10:
+                    value = int(parts[9])
+                    return value
+        return None
 
 def register():
     bpy.utils.register_class(AutoSavePanel)
