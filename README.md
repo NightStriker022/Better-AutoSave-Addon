@@ -5,3 +5,5 @@ With Better AutoSave, users can set their preferred auto-save intervals, with th
 Beyond its core functionality, Better AutoSave also offers customizable settings to cater to individual preferences. Users can adjust the auto-save frequency, designate specific folders for storing backup files, and even configure the addon to create incremental save files. This level of flexibility ensures that the addon seamlessly integrates into various workflow setups, adapting to the unique needs of each user.
 
 By providing a reliable and efficient auto-saving solution, the Better AutoSave Addon empowers Blender users to focus on their creative process without the constant worry of potential data loss. It acts as a safety net, giving users the confidence to experiment, iterate, and push the boundaries of their projects without the fear of losing valuable work.
+
+Join The Discord Community: https://discord.gg/EQrnjabu
