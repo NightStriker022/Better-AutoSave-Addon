@@ -6,4 +6,3 @@ Beyond its core functionality, Better AutoSave also offers customizable settings
 
 By providing a reliable and efficient auto-saving solution, the Better AutoSave Addon empowers Blender users to focus on their creative process without the constant worry of potential data loss. It acts as a safety net, giving users the confidence to experiment, iterate, and push the boundaries of their projects without the fear of losing valuable work.
 
-Join The Discord Community: https://discord.gg/EQrnjabu
